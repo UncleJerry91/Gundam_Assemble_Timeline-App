@@ -1,1 +1,1 @@
-Access your own version of the timeline app here: https://github.com/UncleJerry91/Gundam_Assemble_Timeline-App.git
+Access your own version of the timeline app here: [https://unclejerry91.github.io/Gundam_Assemble_Timeline-App/]([url](https://unclejerry91.github.io/Gundam_Assemble_Timeline-App/))
