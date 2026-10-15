@@ -26,8 +26,9 @@ h1{color:#fff;text-shadow:0 2px 8px #000}
 main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:14px;row-gap:12px;align-items:start}
 main>section{margin-top:0}
 .top{grid-column:1/-1}
-.s-track{grid-column:1/-1;grid-row:2}
-.s-next{grid-column:1;grid-row:3}.s-add{grid-column:2;grid-row:3}.s-log{grid-column:1/-1;grid-row:4}
+.s-vp{grid-column:1/-1;grid-row:2}
+.s-track{grid-column:1/-1;grid-row:3}
+.s-next{grid-column:1;grid-row:4;align-self:stretch}.s-add{grid-column:2;grid-row:4;align-self:stretch}.s-log{grid-column:1/-1;grid-row:5}
 }
 #rot{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;background:#0b0e14;color:#fff;align-items:center;justify-content:center;text-align:center;padding:30px;flex-direction:column;gap:12px}
 @media (orientation:portrait) and (min-width:700px){#rot{display:flex}}
@@ -73,7 +74,7 @@ button,input,select{touch-action:manipulation}
 .vcell.A{background:var(--aa)}
 .vcell.B{background:var(--ba)}
 .vb{min-width:38px;min-height:42px;padding:0;font-size:17px}
-.tl{display:grid;grid-template-columns:50px repeat(10,minmax(84px,1fr)) minmax(108px,1.1fr);grid-gap:4px;gap:4px;align-items:stretch}
+.tl{display:grid;grid-template-columns:50px repeat(10,minmax(84px,1fr));grid-gap:4px;gap:4px;align-items:stretch}
 .rl{display:flex;align-items:center;font-weight:700;font-size:13px}
 .rl.A{color:var(--a)}.rl.B{color:var(--b)}
 .sp.cur{background:var(--hi);color:var(--hit);border-color:var(--hi)}
@@ -84,6 +85,23 @@ button,input,select{touch-action:manipulation}
 .bar input{width:64px}
 #log{max-height:140px;overflow:auto;margin:0;padding-left:18px}
 .hpb{min-width:64px;min-height:56px;font-size:24px;border-radius:10px}
+.next{display:block}
+.nxt{padding:10px 14px;border-radius:8px;border-left:8px solid}
+.nxt.A{background:var(--aa);border-left-color:var(--a)}.nxt.B{background:var(--ba);border-left-color:var(--b)}
+.nl{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--mt)}
+.nn{font-size:34px;line-height:1.05}.nm2{font-weight:600}
+.s-next{display:flex;flex-direction:column}
+.s-next .next{flex:1;display:flex}
+.nxt{flex:1;display:flex;align-items:center;justify-content:space-between}
+.nxt-t{flex:1;min-width:0}
+.nxt-p{width:42%;max-width:190px;align-self:stretch;min-height:96px;border-radius:8px;background-size:cover;background-position:center;margin-left:12px}
+.vt{font-weight:700;text-align:center;margin-bottom:8px;font-size:13px;letter-spacing:.06em}
+.vrow{display:grid;grid-template-columns:1fr 1fr;grid-gap:10px}
+.vc{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px}
+.vc.A{background:var(--aa)}.vc.B{background:var(--ba)}
+.vn{font-weight:700;font-size:15px}.vc .num{font-size:40px}
+.vc .vb{min-width:52px;min-height:48px;font-size:20px;margin-left:6px}
+.vbs{display:flex}
 .sw{display:none}
 @media (max-width:700px){
 main{padding:10px}
@@ -91,7 +109,7 @@ h1{font-size:22px}.next .num{font-size:24px}
 input,select{font-size:16px}
 #pick{flex:1 1 100%}
 .sw{display:block;margin:6px 0 0}
-.tl{grid-template-columns:34px repeat(10,minmax(66px,1fr)) minmax(86px,1fr)}
+.tl{grid-template-columns:34px repeat(10,minmax(66px,1fr))}
 .tok{height:84px;min-height:84px;font-size:11px;padding:4px 5px}
 .lane{min-height:92px}
 .rl{font-size:11px}
@@ -102,6 +120,7 @@ input,select{font-size:16px}
 .card{padding:14px}
 .big{min-width:92px;min-height:72px;font-size:40px}
 .hpb{min-width:56px;min-height:50px;font-size:22px}
+.vrow{grid-template-columns:1fr}.vc{padding:8px 10px}.vc .num{font-size:30px}.nn{font-size:26px}
 }
 </style>
 </head>
@@ -109,6 +128,8 @@ input,select{font-size:16px}
 <main>
 <div class="top"><h1>Assemble Timeline</h1>
 <div class="row"><button id="undo">Undo</button><button id="reset">Clear all</button></div></div>
+
+<section class="s-vp"><div id="vp"></div></section>
 
 <section class="s-next">
 <div class="next" id="next"></div>
@@ -149,18 +170,19 @@ function nudge(id,n){var u=get(id);if(!u||u.pos+n<1||u.pos+n>10)return;snap();va
  S.log.unshift(u.name+": "+f+" → "+u.pos+" ("+(n>0?"+":"")+n+")");S.log=S.log.slice(0,40);render()}
 function render(){
  S.vp=S.vp||{A:0,B:0};var o=order(),a=o[0];
- $("next").innerHTML=a?'<span class="num">'+esc(a.name)+'</span><span><span class="dot '+a.team+'"></span>'+(a.team==="A"?"Blue":"Red")+' acts next, on space '+a.pos+'</span>':'<span class="muted">Add models below to start.</span>';
+ $("next").innerHTML=a?'<div class="nxt '+a.team+'"><div class="nxt-t"><div class="nl">NEXT UP</div><div class="num nn">'+esc(a.name)+'</div><div class="nm2">'+(a.team==="A"?"Blue":"Red")+' team · space '+a.pos+'</div></div>'+(imc(a.name)?'<div class="nxt-p'+imc(a.name)+'"></div>':'')+'</div>':'<span class="muted">Add models below to start.</span>';
  var cols=[];for(var p=1;p<=10;p++){cols.push(o.filter(function(u){return p===10?u.pos>=10:u.pos===p}))}
  var lane=function(tm,p){return'<div class="lane">'+cols[p-1].filter(function(u){return u.team===tm}).map(function(u){return'<button class="tok'+imc(u.name)+' '+u.team+(a&&u.id===a.id?' act':'')+(u.id===sel?' sel':'')+'" data-t="'+u.id+'">'+esc(u.name)+(u.mhp?'<small style="display:block">HP '+u.hp+'/'+u.mhp+(u.hp<=0?' · down':'')+'</small>':'')+'</button>'}).join("")+'</div>'};
- var vcell=function(tm){return'<div class="vcell '+tm+'"><b class="num" style="font-size:34px">'+S.vp[tm]+'</b><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="vb" data-v="'+tm+':-1" aria-label="Lose 1 victory point">−1</button><button class="vb" data-v="'+tm+':1" aria-label="Gain 1 victory point">+1</button></div></div>'};
  var t='<div class="tl"><div class="rl A">Blue</div>';
  for(var p=1;p<=10;p++)t+=lane("A",p);
- t+=vcell("A")+'<div class="rl muted">Space</div>';
+ t+='<div class="rl muted">Space</div>';
  for(var p=1;p<=10;p++){var cur=a&&(p===10?a.pos>=10:a.pos===p);t+='<button class="sp num'+(cur?' cur':'')+'" data-s="'+p+'" aria-label="Space '+p+'">'+p+'</button>'}
- t+='<div class="vcell" style="font-weight:700">VICTORY POINTS</div><div class="rl B">Red</div>';
+ t+='<div class="rl B">Red</div>';
  for(var p=1;p<=10;p++)t+=lane("B",p);
- t+=vcell("B")+'</div>';
+ t+='</div>';
  var sl=$("track").scrollLeft;$("track").innerHTML=t;$("track").scrollLeft=sl;
+ var vc=function(tm,nm){return'<div class="vc '+tm+'"><span class="vn">'+nm+'</span><b class="num">'+S.vp[tm]+'</b><span class="vbs"><button class="vb" data-v="'+tm+':-1" aria-label="Lose 1 '+nm+' victory point">−1</button><button class="vb" data-v="'+tm+':1" aria-label="Gain 1 '+nm+' victory point">+1</button></span></div>'};
+ $("vp").innerHTML='<div class="vt">VICTORY POINTS</div><div class="vrow">'+vc("A","Blue")+vc("B","Red")+'</div>';
  $("log").innerHTML=S.log.map(function(l){return"<li>"+esc(l)+"</li>"}).join("");
  var u=sel&&get(sel);
  $("bar").innerHTML='<div>'+(u?'<div class="row" style="margin-bottom:8px"><b>'+esc(u.name)+'</b><span class="muted">on space '+u.pos+' · move by</span></div>'+
